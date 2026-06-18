@@ -91,7 +91,7 @@
         .workshop-tabs {
             display: flex;
             gap: 5px;
-                    }
+        }
 
         .tab-btn {
             background-color: #202228;
@@ -466,9 +466,12 @@
         function renderFilteredList() {
             const searchQuery = searchBar.value.toLowerCase().trim();
             const localUploadIds = JSON.parse(localStorage.getItem('my_workshop_uploads')) || [];
+            
+            // IMMUNIZATION: Transform cached IDs to safe string primitives
+            const stringUploadIds = localUploadIds.map(String);
 
             const recordsToDisplay = allCachedMods.filter(mod => {
-                const matchesTab = currentFilterMode === 'all' || localUploadIds.includes(mod.id);
+                const matchesTab = currentFilterMode === 'all' || stringUploadIds.includes(String(mod.id));
                 
                 const planTitle = (mod.name || '').toLowerCase();
                 const authorName = (mod.author || '').toLowerCase();
@@ -496,12 +499,11 @@
                 const authorString = mod.author || 'Unknown Operator';
                 const downloadedFileName = mod.original_filename || `${mod.name.replace(/\s+/g, '_')}.pln`;
                 
-                // Clean up any dynamic folder strings for display logic
                 const folderMap = mod.map_name || 'MapName';
                 const folderMode = mod.game_mode || 'GameMode';
 
-                // Check ownership status for delete button generation
-                const isMyPlan = localUploadIds.includes(mod.id);
+                // IMMUNIZATION: Safe string parsing checks
+                const isMyPlan = stringUploadIds.includes(String(mod.id));
                 const deleteButtonHtml = isMyPlan ? `<button class="btn-delete" onclick="deletePlan('${mod.id}')">Remove Plan</button>` : '';
 
                 const cardDiv = document.createElement('div');
@@ -533,9 +535,10 @@
         // --- 3. Deletion Module (Restricted via client localStorage validation) ---
         async function deletePlan(planId) {
             const trackingCache = JSON.parse(localStorage.getItem('my_workshop_uploads')) || [];
+            const stringCache = trackingCache.map(String);
             
-            // Re-verify client identity checks inside layout thread context
-            if (!trackingCache.includes(planId)) {
+            // IMMUNIZATION: Match values safely across text schemas
+            if (!stringCache.includes(String(planId))) {
                 alert("Authorization fault: You do not possess structural ownership permissions for this blueprint.");
                 return;
             }
@@ -545,7 +548,6 @@
             }
 
             try {
-                // Remove records matching matching row targets inside data schemas
                 const { error } = await supabaseClient
                     .from('mod_list')
                     .delete()
@@ -553,12 +555,12 @@
 
                 if (error) throw error;
 
-                // Clean up cached item records out of user history vectors
-                const filteredCache = trackingCache.filter(id => id !== planId);
+                // IMMUNIZATION: Filter lists cleanly using cast comparisons
+                const filteredCache = trackingCache.filter(id => String(id) !== String(planId));
                 localStorage.setItem('my_workshop_uploads', JSON.stringify(filteredCache));
 
                 alert("Plan removed successfully.");
-                fetchMods(); // Re-index arrays
+                fetchMods(); 
             } catch (err) {
                 console.error("Purge operations transaction pipeline broke:", err);
                 alert(`Purge failure event: ${err.message || 'Network write collision'}`);
@@ -626,7 +628,6 @@
             
             if (!file) return alert('Target file parameter empty.');
 
-            // Virus mitigation step: Client side extension intercept check 
             const fileExtension = file.name.split('.').pop().toLowerCase();
             if (fileExtension !== 'pln') {
                 alert("Security Restriction: Only raw native plan payloads ending explicitly with '.pln' extensions are accepted.");
