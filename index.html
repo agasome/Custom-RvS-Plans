@@ -91,7 +91,7 @@
         .workshop-tabs {
             display: flex;
             gap: 5px;
-        }
+                    }
 
         .tab-btn {
             background-color: #202228;
@@ -234,8 +234,8 @@
             display: flex;
             flex-wrap: wrap;
             gap: 4px;
-            margin-top: 5px;
-            margin-bottom: 15px;
+            margin-top: 2px;
+            margin-bottom: 5px;
         }
 
         .tag-pill {
@@ -245,6 +245,27 @@
             border: 1px solid #22252c;
             color: #b8b6b4;
             font-size: 11px;
+        }
+
+        /* Installation Instructions Box inside Cards */
+        .install-path-box {
+            background-color: #101114;
+            border: 1px dashed #444;
+            padding: 8px;
+            font-size: 11px;
+            color: #ddb044;
+            border-radius: 2px;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+
+        .install-path-box strong {
+            color: #8f96a3;
+            display: block;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 0.5px;
         }
 
         .btn-download {
@@ -260,12 +281,35 @@
             text-align: center;
             width: 100%;
             box-sizing: border-box;
-            margin-top: auto;
         }
 
         .btn-download:hover {
             background-color: var(--accent-red);
             border-color: var(--accent-red-hover);
+        }
+
+        /* Red Delete Button Styling */
+        .btn-delete {
+            background-color: #1a1b20;
+            color: #ca2a2a;
+            border: 1px solid rgba(202, 42, 42, 0.4);
+            padding: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        .btn-delete:hover {
+            background-color: var(--accent-red);
+            color: #fff;
+            border-color: var(--accent-red);
         }
 
         .loading-text {
@@ -371,7 +415,7 @@
                 </select>
                 
                 <label for="modFile">Select Plan File (.pln)</label>
-                <input type="file" id="modFile" required>
+                <input type="file" id="modFile" accept=".pln" required>
 
                 <label for="modImage">Tactical Screenshot Preview (Optional)</label>
                 <input type="file" id="modImage" accept="image/*">
@@ -448,10 +492,18 @@
             
             recordsToDisplay.forEach(mod => {
                 const uploadDate = mod.created_at ? new Date(mod.created_at).toLocaleDateString() : 'Recent';
-                const previewSrc = mod.image_url || 'https://placehold.co/300xl90/101114/8f96a3?text=No+Preview';
+                const previewSrc = mod.image_url || 'https://placehold.co/300x190/101114/8f96a3?text=No+Preview';
                 const authorString = mod.author || 'Unknown Operator';
                 const downloadedFileName = mod.original_filename || `${mod.name.replace(/\s+/g, '_')}.pln`;
                 
+                // Clean up any dynamic folder strings for display logic
+                const folderMap = mod.map_name || 'MapName';
+                const folderMode = mod.game_mode || 'GameMode';
+
+                // Check ownership status for delete button generation
+                const isMyPlan = localUploadIds.includes(mod.id);
+                const deleteButtonHtml = isMyPlan ? `<button class="btn-delete" onclick="deletePlan('${mod.id}')">Remove Plan</button>` : '';
+
                 const cardDiv = document.createElement('div');
                 cardDiv.className = 'workshop-item';
                 cardDiv.innerHTML = `
@@ -461,17 +513,59 @@
                         <span class="item-meta">By <strong>${authorString}</strong></span>
                         <span class="item-meta" style="font-size: 11px; margin-top: -3px;">Intel Filed: ${uploadDate}</span>
                         <div class="tag-group">
-                            <span class="tag-pill">${mod.map_name || 'Generic Location'}</span>
-                            <span class="tag-pill">${mod.game_mode || 'Standard Mode'}</span>
+                            <span class="tag-pill">${folderMap}</span>
+                            <span class="tag-pill">${folderMode}</span>
                         </div>
+                        
+                        <div class="install-path-box">
+                            <strong>Drop File Destination:</strong>
+                            Rainbow Six 3 Gold\\Save\\Plan\\${folderMap}\\${folderMode}\\
+                        </div>
+
                         <button class="btn-download" onclick="streamDownload('${mod.download_url}', '${downloadedFileName}')">Download Plan (.pln)</button>
+                        ${deleteButtonHtml}
                     </div>
                 `;
                 modListContainer.appendChild(cardDiv);
             });
         }
 
-        // --- 3. Lightbox Modal Control Logic ---
+        // --- 3. Deletion Module (Restricted via client localStorage validation) ---
+        async function deletePlan(planId) {
+            const trackingCache = JSON.parse(localStorage.getItem('my_workshop_uploads')) || [];
+            
+            // Re-verify client identity checks inside layout thread context
+            if (!trackingCache.includes(planId)) {
+                alert("Authorization fault: You do not possess structural ownership permissions for this blueprint.");
+                return;
+            }
+
+            if (!confirm("Are you certain you wish to purge this operational strategy from the directory index permanently?")) {
+                return;
+            }
+
+            try {
+                // Remove records matching matching row targets inside data schemas
+                const { error } = await supabaseClient
+                    .from('mod_list')
+                    .delete()
+                    .eq('id', planId);
+
+                if (error) throw error;
+
+                // Clean up cached item records out of user history vectors
+                const filteredCache = trackingCache.filter(id => id !== planId);
+                localStorage.setItem('my_workshop_uploads', JSON.stringify(filteredCache));
+
+                alert("Plan removed successfully.");
+                fetchMods(); // Re-index arrays
+            } catch (err) {
+                console.error("Purge operations transaction pipeline broke:", err);
+                alert(`Purge failure event: ${err.message || 'Network write collision'}`);
+            }
+        }
+
+        // --- 4. Lightbox Modal Control Logic ---
         function openImageModal(src) {
             const modal = document.getElementById('imageModal');
             const modalImg = document.getElementById('modalImg');
@@ -483,7 +577,7 @@
             document.getElementById('imageModal').style.display = "none";
         }
 
-        // --- 4. Tab Routing Navigation Systems ---
+        // --- 5. Tab Routing Navigation Systems ---
         function switchTab(mode) {
             currentFilterMode = mode;
             document.getElementById('tabAll').classList.toggle('active', mode === 'all');
@@ -493,7 +587,7 @@
 
         searchBar.addEventListener('input', renderFilteredList);
 
-        // --- 5. Stream Blobs Interceptor (Preserves Custom Ext Names) ---
+        // --- 6. Stream Blobs Interceptor (Preserves Custom Ext Names) ---
         async function streamDownload(url, filename) {
             try {
                 const response = await fetch(url);
@@ -516,7 +610,7 @@
             }
         }
 
-        // --- 6. Form Submission Transaction Pipeline ---
+        // --- 7. Form Submission Transaction Pipeline ---
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -532,16 +626,19 @@
             
             if (!file) return alert('Target file parameter empty.');
 
+            // Virus mitigation step: Client side extension intercept check 
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            if (fileExtension !== 'pln') {
+                alert("Security Restriction: Only raw native plan payloads ending explicitly with '.pln' extensions are accepted.");
+                return;
+            }
+
             submitBtn.innerText = 'Publishing Dossier...';
             submitBtn.disabled = true;
 
             try {
                 // A. Upload Strategy Plan Data 
-                let fileExtension = file.name.split('.').pop();
-                // Ensure output registers as .pln if client uploads raw files missing explicit naming arrays
-                if (!fileExtension || fileExtension.length > 4) fileExtension = 'pln';
-                
-                const uniqueModName = `files/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
+                const uniqueModName = `files/${Date.now()}_${Math.random().toString(36).substring(7)}.pln`;
 
                 const { data: storageData, error: storageError } = await supabaseClient.storage
                     .from('mods')
