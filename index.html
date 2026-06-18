@@ -88,20 +88,57 @@
             padding: 20px;
             border-radius: 3px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            margin-bottom: 25px;
+        }
+
+        .block-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .block-title {
             font-size: 16px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-top: 0;
-            margin-bottom: 20px;
+            margin: 0;
             color: #fff;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
         }
 
-        /* Form Styling */
+        /* Workshop Filter Tabs */
+        .workshop-tabs {
+            display: flex;
+            gap: 5px;
+        }
+
+        .tab-btn {
+            background-color: #202228;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            font-size: 12px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 2px;
+            font-weight: bold;
+        }
+
+        .tab-btn.active {
+            background-color: var(--accent-red);
+            color: #fff;
+            border-color: var(--accent-red);
+        }
+
+        /* Search Bar & Forms Styling */
+        .search-container {
+            margin-bottom: 20px;
+        }
+
         form {
             display: flex;
             flex-direction: column;
@@ -115,7 +152,7 @@
             font-weight: bold;
         }
 
-        input[type="text"], input[type="file"] {
+        input[type="text"], input[type="file"], select {
             background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             padding: 12px;
@@ -125,9 +162,13 @@
             transition: border-color 0.2s;
         }
 
-        input[type="text"]:focus {
+        input[type="text"]:focus, select:focus {
             outline: none;
             border-color: var(--accent-red);
+        }
+
+        select {
+            cursor: pointer;
         }
 
         /* Steam Style Buttons */
@@ -185,8 +226,8 @@
         }
 
         .item-preview-img {
-            width: 80px;
-            height: 50px;
+            width: 100px;
+            height: 65px;
             object-fit: cover;
             border-radius: 2px;
             border: 1px solid var(--border-color);
@@ -196,7 +237,7 @@
         .item-details {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 4px;
         }
 
         .item-title {
@@ -210,15 +251,26 @@
             color: var(--text-muted);
         }
 
+        .tag-pill {
+            display: inline-block;
+            background-color: #101114;
+            padding: 2px 6px;
+            border-radius: 2px;
+            border: 1px solid #22252c;
+            color: #b8b6b4;
+            margin-right: 4px;
+            font-size: 11px;
+        }
+
         .btn-download {
             background-color: #3a3f4c;
             color: #fff;
-            text-decoration: none;
-            padding: 8px 16px;
+            border: 1px solid #555e70;
+            padding: 10px 18px;
             font-size: 13px;
             font-weight: bold;
             border-radius: 2px;
-            border: 1px solid #555e70;
+            cursor: pointer;
             transition: all 0.2s;
             white-space: nowrap;
         }
@@ -245,20 +297,48 @@
 
     <div class="container">
         
-        <div class="workshop-block">
-            <h2 class="block-title">Available Mission Plans</h2>
-            <div id="modList" class="items-list">
-                <span class="loading-text">Accessing secure database...</span>
+        <div>
+            <div class="workshop-block">
+                <div class="block-header-flex">
+                    <h2 class="block-title">Available Mission Plans</h2>
+                    <div class="workshop-tabs">
+                        <button class="tab-btn active" id="tabAll" onclick="switchTab('all')">All Plans</button>
+                        <button class="tab-btn" id="tabMine" onclick="switchTab('mine')">My Uploads</button>
+                    </div>
+                </div>
+
+                <div class="search-container">
+                    <input type="text" id="searchBar" placeholder="Filter by plan title or author codename..." style="width: 100%; box-sizing: border-box;">
+                </div>
+
+                <div id="modList" class="items-list">
+                    <span class="loading-text">Accessing secure database...</span>
+                </div>
             </div>
         </div>
 
         <div class="workshop-block">
             <h2 class="block-title">Submit Custom Plan</h2>
             <form id="uploadForm">
+                <label for="authorName">Author Handle</label>
+                <input type="text" id="authorName" placeholder="e.g., Ding_Chavez" required>
+
                 <label for="modName">Plan Codename</label>
-                <input type="text" id="modName" placeholder="e.g., Operation_Iron_Shield.vpl" required>
+                <input type="text" id="modName" placeholder="e.g., Operation_Iron_Shield" required>
+
+                <label for="mapName">Target Map Name</label>
+                <input type="text" id="mapName" placeholder="e.g., Peak, Mint, City Street Large" required>
+
+                <label for="gameMode">Operational Mode</label>
+                <select id="gameMode" required>
+                    <option value="" disabled selected>Select Game Mode</option>
+                    <option value="Mission">Mission (Campaign)</option>
+                    <option value="Terrorist Hunt">Terrorist Hunt</option>
+                    <option value="Hostage Rescue">Hostage Rescue</option>
+                    <option value="Adversarial">Adversarial (MP)</option>
+                </select>
                 
-                <label for="modFile">Select Plan File (~5KB)</label>
+                <label for="modFile">Select Plan File (.vpl / .dat)</label>
                 <input type="file" id="modFile" required>
 
                 <label for="modImage">Preview Screenshot (Optional)</label>
@@ -271,21 +351,23 @@
     </div>
 
     <script>
-        // --- 1. Supabase Settings ---
+        // --- 1. Supabase Client Configuration ---
         const SUPABASE_URL = 'https://jbdewrsxtjgyvzskybsq.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpiZGV3cnN4dGpneXZ6c2t5YnNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTI1ODksImV4cCI6MjA5NzM4ODU4OX0.JNgL5MwoUUHBaqivMpiSujdYt_-eHdqRPXh0oS3CIFo';
         
-        // Fixed naming conflict here by renaming our local variable instance to supabaseClient
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const uploadForm = document.getElementById('uploadForm');
         const modListContainer = document.getElementById('modList');
         const submitBtn = document.getElementById('submitBtn');
+        const searchBar = document.getElementById('searchBar');
 
-        // --- 2. Query Database and Build Workshop List ---
+        // Global memory cache to filter lists locally instantly
+        let allCachedMods = [];
+        let currentFilterMode = 'all'; // 'all' or 'mine'
+
+        // --- 2. Live Data Query and Display Matrix ---
         async function fetchMods() {
-            modListContainer.innerHTML = '<span class="loading-text">Synchronizing files...</span>';
-            
             const { data, error } = await supabaseClient
                 .from('mod_list')
                 .select('*')
@@ -297,19 +379,45 @@
                 return;
             }
 
-            if (!data || data.length === 0) {
-                modListContainer.innerHTML = '<p class="loading-text">No custom plans filed yet. Upload your strategy tactical file to begin.</p>';
+            allCachedMods = data || [];
+            renderFilteredList();
+        }
+
+        function renderFilteredList() {
+            const searchQuery = searchBar.value.toLowerCase().trim();
+            
+            // Get local client uploads history list
+            const localUploadIds = JSON.parse(localStorage.getItem('my_workshop_uploads')) || [];
+
+            // Filter data according to Tab selection & Search Query text
+            const recordsToDisplay = allCachedMods.filter(mod => {
+                const matchesTab = currentFilterMode === 'all' || localUploadIds.includes(mod.id);
+                
+                const planTitle = (mod.name || '').toLowerCase();
+                const authorName = (mod.author || '').toLowerCase();
+                const mapName = (mod.map_name || '').toLowerCase();
+                const gameMode = (mod.game_mode || '').toLowerCase();
+                
+                const matchesSearch = planTitle.includes(searchQuery) || 
+                                      authorName.includes(searchQuery) ||
+                                      mapName.includes(searchQuery) ||
+                                      gameMode.includes(searchQuery);
+
+                return matchesTab && matchesSearch;
+            });
+
+            if (recordsToDisplay.length === 0) {
+                modListContainer.innerHTML = '<p class="loading-text">No matching records indexed in this viewport context.</p>';
                 return;
             }
 
             modListContainer.innerHTML = ''; 
             
-            data.forEach(mod => {
+            recordsToDisplay.forEach(mod => {
                 const uploadDate = mod.created_at ? new Date(mod.created_at).toLocaleDateString() : 'Recent';
-                
-                // Fallback placeholder image if no screenshot was provided
                 const previewSrc = mod.image_url || 'https://placehold.co/160x100/101114/8f96a3?text=No+Preview';
-
+                const authorString = mod.author || 'Anonymous';
+                
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'workshop-item';
                 itemDiv.innerHTML = `
@@ -317,34 +425,74 @@
                         <img src="${previewSrc}" class="item-preview-img" alt="Mod Preview">
                         <div class="item-details">
                             <span class="item-title">${mod.name}</span>
-                            <span class="item-meta">Posted: ${uploadDate} | File Size: ~5 KB</span>
+                            <span class="item-meta">By <strong>${authorString}</strong> | Posted: ${uploadDate}</span>
+                            <div>
+                                <span class="tag-pill">${mod.map_name || 'Generic Map'}</span>
+                                <span class="tag-pill">${mod.game_mode || 'Campaign'}</span>
+                            </div>
                         </div>
                     </div>
-                    <a href="${mod.download_url}" class="btn-download" download target="_blank">Download Plan</a>
+                    <button class="btn-download" onclick="streamDownload('${mod.download_url}', '${mod.original_filename || 'plan.vpl'}')">Download Plan</button>
                 `;
                 modListContainer.appendChild(itemDiv);
             });
         }
 
-        // --- 3. Handle Storage Processing and Table Inserter ---
+        // --- 3. View Switcher System (All vs My Uploads) ---
+        function switchTab(mode) {
+            currentFilterMode = mode;
+            document.getElementById('tabAll').classList.toggle('active', mode === 'all');
+            document.getElementById('tabMine').classList.toggle('active', mode === 'mine');
+            renderFilteredList();
+        }
+
+        searchBar.addEventListener('input', renderFilteredList);
+
+        // --- 4. Stream Downloader Framework (Maintains Original File Names) ---
+        async function streamDownload(url, filename) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Network file transmission handshake failed.');
+                
+                const blob = await response.blob();
+                const internalUrl = window.URL.createObjectURL(blob);
+                
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.href = internalUrl;
+                downloadAnchor.download = filename; // Forces original filename output
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                
+                // Tear down virtual links
+                document.body.removeChild(downloadAnchor);
+                window.URL.revokeObjectURL(internalUrl);
+            } catch (error) {
+                console.error('Blob intercept stream download failed:', error);
+                window.open(url, '_blank'); // Standard CDN fallback
+            }
+        }
+
+        // --- 5. Data Packet Pipeline & Form Processors ---
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const fileInput = document.getElementById('modFile');
             const imageInput = document.getElementById('modImage');
             const nameInput = document.getElementById('modName');
+            const authorInput = document.getElementById('authorName');
+            const mapInput = document.getElementById('mapName');
+            const modeInput = document.getElementById('gameMode');
             
             const file = fileInput.files[0];
             const imageFile = imageInput.files[0];
-            const modName = nameInput.value;
-
-            if (!file) return alert('No strategic file target selected.');
+            
+            if (!file) return alert('No file data targeted.');
 
             submitBtn.innerText = 'Uploading Plan...';
             submitBtn.disabled = true;
 
             try {
-                // A. Process Mod File Upload
+                // A. Upload Game System Strategy File
                 const modExtension = file.name.split('.').pop();
                 const uniqueModName = `files/${Date.now()}_${Math.random().toString(36).substring(7)}.${modExtension}`;
 
@@ -358,7 +506,7 @@
                     .from('mods')
                     .getPublicUrl(uniqueModName);
 
-                // B. Process Optional Screenshot Upload
+                // B. Upload Content Presentation Preview Image
                 let imagePublicUrl = null;
                 if (imageFile) {
                     const imgExtension = imageFile.name.split('.').pop();
@@ -377,18 +525,30 @@
                     imagePublicUrl = publicUrl;
                 }
 
-                // C. Log records into index table (including new image field)
-                const { error: dbError } = await supabaseClient
+                // C. Log records into database table index schema + retrieve generated ID
+                const { data: insertedRows, error: dbError } = await supabaseClient
                     .from('mod_list')
                     .insert([
                         { 
-                            name: modName, 
+                            name: nameInput.value, 
+                            author: authorInput.value,
+                            map_name: mapInput.value,
+                            game_mode: modeInput.value,
+                            original_filename: file.name, // Saves "Operation_Raven.vpl" inside database
                             download_url: filePublicUrl,
                             image_url: imagePublicUrl 
                         }
-                    ]);
+                    ])
+                    .select(); // Fetches row parameters immediately upon creation
 
                 if (dbError) throw dbError;
+
+                // D. Track the item ID locally on user's storage cache map
+                if (insertedRows && insertedRows[0]) {
+                    let localHistory = JSON.parse(localStorage.getItem('my_workshop_uploads')) || [];
+                    localHistory.push(insertedRows[0].id);
+                    localStorage.setItem('my_workshop_uploads', JSON.stringify(localHistory));
+                }
 
                 alert('Plan successfully deployed to the public workshop directory.');
                 uploadForm.reset(); 
@@ -403,7 +563,6 @@
             }
         });
 
-        // Initialize connection loop on ready state
         window.onload = fetchMods;
     </script>
 </body>
