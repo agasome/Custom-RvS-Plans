@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rainbow Six: 3 Custom Plans Hub</title>
-    <!-- Include Supabase JS Client library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -34,16 +33,20 @@
             padding: 40px 10%;
         }
 
-        /* Classic Tactical Rainbow Six Style Title Font Stack */
+        /* Clean, Readable, and Professional Tactical Font Stack */
         .workshop-title {
-            font-family: "Impact", "Arial Black", sans-serif;
-            font-size: 38px;
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            font-size: 32px;
             margin: 0;
-            font-weight: 900;
+            font-weight: 800;
             color: #fff;
-            letter-spacing: 4px;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
-            text-shadow: 3px 3px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000;
+        }
+
+        /* Highlight Span for Specific Title Segment Coloring */
+        .accent-title-red {
+            color: var(--accent-red);
         }
 
         /* Main Layout Content Grid */
@@ -401,7 +404,8 @@
 
         .confirm-box h3 {
             margin-top: 0;
-            font-family: "Impact", sans-serif;
+            font-family: "Segoe UI", sans-serif;
+            font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: #fff;
@@ -456,15 +460,12 @@
 </head>
 <body>
 
-    <!-- Content Header Section -->
     <div class="workshop-header">
-        <h1 class="workshop-title">Rainbow Six: 3 Custom Plans Hub</h1>
+        <h1 class="workshop-title">Rainbow Six: 3 <span class="accent-title-red">Custom Plans</span> Hub</h1>
     </div>
 
-    <!-- Main Content Layout Grid -->
     <div class="container">
         
-        <!-- Left Side: Available Files Matrix HUB Grid Layout -->
         <div>
             <div class="workshop-block">
                 <div class="block-header-flex">
@@ -475,7 +476,6 @@
                     </div>
                 </div>
 
-                <!-- Real-time Filter Field -->
                 <div class="search-container">
                     <input type="text" id="searchBar" placeholder="Filter by map title, plan codename, or author handle..." style="width: 100%; box-sizing: border-box;">
                 </div>
@@ -486,7 +486,6 @@
             </div>
         </div>
 
-        <!-- Right Side: Action/Upload Panel -->
         <div class="workshop-block">
             <h2 class="block-title">File Strategic Intel</h2>
             <form id="uploadForm">
@@ -519,20 +518,18 @@
                 <label for="modImage">Tactical Screenshot Preview (Optional)</label>
                 <input type="file" id="modImage" accept="image/*">
                 
-                <button type="submit" id="submitBtn" class="btn-action">Publish to Hub</button>
+                <button type="submit" id="submitBtn" class="btn-action">Publish</button>
                 <div id="uploadStatus" class="status-msg-line"></div>
             </form>
         </div>
 
     </div>
 
-    <!-- Lightbox Modal Window Structural Wrapper -->
     <div id="imageModal" class="modal" onclick="closeImageModal()">
         <span class="modal-close" onclick="closeImageModal()">&times;</span>
         <img class="modal-content" id="modalImg">
     </div>
 
-    <!-- Integrated Custom Deletion Overlay Confirmation Box Structure -->
     <div id="deleteModal" class="confirm-overlay">
         <div class="confirm-box">
             <h3>Confirm Operational Purge</h3>
@@ -559,7 +556,7 @@
 
         let allCachedMods = [];
         let currentFilterMode = 'all';
-        let planIdToDelete = null; // Global memory tracking slot for deletion processes
+        let planIdToDelete = null; 
 
         // --- 2. Live Data Query and Display Matrix ---
         async function fetchMods() {
@@ -758,7 +755,7 @@
                 return;
             }
 
-            submitBtn.innerText = 'Publishing Dossier...';
+            submitBtn.innerText = 'Publishing...';
             submitBtn.disabled = true;
             uploadStatus.innerHTML = '';
 
@@ -820,21 +817,18 @@
                     localStorage.setItem('my_workshop_uploads', JSON.stringify(localHistory));
                 }
 
-                // Inline notification system interface execution update
                 uploadStatus.innerHTML = '<span style="color: #4caf50;">Upload successful!</span>';
                 
-                // Clear the layout values out cleanly
                 uploadForm.reset(); 
                 fetchMods();        
                 
-                // Auto-wipe status notice line element after time lapse context rules
                 setTimeout(() => { uploadStatus.innerHTML = ''; }, 5000);
                 
             } catch (error) {
                 console.error('Deployment transaction failed:', error);
                 uploadStatus.innerHTML = `<span style="color: var(--accent-red);">Error: ${error.message || 'Transmission handoff fault'}</span>`;
             } finally {
-                submitBtn.innerText = 'Publish to Hub';
+                submitBtn.innerText = 'Publish';
                 submitBtn.disabled = false;
             }
         });
