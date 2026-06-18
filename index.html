@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Steam Workshop :: Rainbow Six 3: Custom Plans</title>
-    <!-- Include Supabase JS Client library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -166,7 +165,7 @@
         .workshop-item {
             background-color: var(--bg-card);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 20px;
+            padding: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -177,6 +176,21 @@
         .workshop-item:hover {
             background-color: #2c2f3a;
             border-color: var(--border-color);
+        }
+
+        .item-left-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .item-preview-img {
+            width: 80px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 2px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-input);
         }
 
         .item-details {
@@ -206,6 +220,7 @@
             border-radius: 2px;
             border: 1px solid #555e70;
             transition: all 0.2s;
+            white-space: nowrap;
         }
 
         .btn-download:hover {
@@ -221,19 +236,15 @@
 </head>
 <body>
 
-    <!-- Fake Steam Top Navigation -->
     <div class="steam-nav">STORE &nbsp;&nbsp; COMMUNITY &nbsp;&nbsp; ABOUT &nbsp;&nbsp; SUPPORT</div>
 
-    <!-- Workshop Banner -->
     <div class="workshop-header">
         <div class="workshop-breadcrumbs">Tom Clancy's Rainbow Six 3 > Community Workshop</div>
         <h1 class="workshop-title">Custom <span>Plans</span> Hub</h1>
     </div>
 
-    <!-- Main Content Layout Grid -->
     <div class="container">
         
-        <!-- Left Side: Available Files Matrix -->
         <div class="workshop-block">
             <h2 class="block-title">Available Mission Plans</h2>
             <div id="modList" class="items-list">
@@ -241,15 +252,17 @@
             </div>
         </div>
 
-        <!-- Right Side: Action/Upload panel -->
         <div class="workshop-block">
             <h2 class="block-title">Submit Custom Plan</h2>
             <form id="uploadForm">
                 <label for="modName">Plan Codename</label>
                 <input type="text" id="modName" placeholder="e.g., Operation_Iron_Shield.vpl" required>
                 
-                <label for="modFile">Select File (~5KB)</label>
+                <label for="modFile">Select Plan File (~5KB)</label>
                 <input type="file" id="modFile" required>
+
+                <label for="modImage">Preview Screenshot (Optional)</label>
+                <input type="file" id="modImage" accept="image/*">
                 
                 <button type="submit" id="submitBtn" class="btn-action">Upload to Workshop</button>
             </form>
@@ -262,7 +275,8 @@
         const SUPABASE_URL = 'https://jbdewrsxtjgyvzskybsq.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpiZGV3cnN4dGpneXZ6c2t5YnNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTI1ODksImV4cCI6MjA5NzM4ODU4OX0.JNgL5MwoUUHBaqivMpiSujdYt_-eHdqRPXh0oS3CIFo';
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Fixed naming conflict here by renaming our local variable instance to supabaseClient
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const uploadForm = document.getElementById('uploadForm');
         const modListContainer = document.getElementById('modList');
@@ -272,7 +286,7 @@
         async function fetchMods() {
             modListContainer.innerHTML = '<span class="loading-text">Synchronizing files...</span>';
             
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('mod_list')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -291,15 +305,20 @@
             modListContainer.innerHTML = ''; 
             
             data.forEach(mod => {
-                // Formatting date for Steam atmosphere
                 const uploadDate = mod.created_at ? new Date(mod.created_at).toLocaleDateString() : 'Recent';
                 
+                // Fallback placeholder image if no screenshot was provided
+                const previewSrc = mod.image_url || 'https://placehold.co/160x100/101114/8f96a3?text=No+Preview';
+
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'workshop-item';
                 itemDiv.innerHTML = `
-                    <div class="item-details">
-                        <span class="item-title">${mod.name}</span>
-                        <span class="item-meta">Posted: ${uploadDate} | File Size: ~5 KB</span>
+                    <div class="item-left-group">
+                        <img src="${previewSrc}" class="item-preview-img" alt="Mod Preview">
+                        <div class="item-details">
+                            <span class="item-title">${mod.name}</span>
+                            <span class="item-meta">Posted: ${uploadDate} | File Size: ~5 KB</span>
+                        </div>
                     </div>
                     <a href="${mod.download_url}" class="btn-download" download target="_blank">Download Plan</a>
                 `;
@@ -312,9 +331,11 @@
             e.preventDefault();
             
             const fileInput = document.getElementById('modFile');
+            const imageInput = document.getElementById('modImage');
             const nameInput = document.getElementById('modName');
             
             const file = fileInput.files[0];
+            const imageFile = imageInput.files[0];
             const modName = nameInput.value;
 
             if (!file) return alert('No strategic file target selected.');
@@ -323,27 +344,48 @@
             submitBtn.disabled = true;
 
             try {
-                // Format unique asset key name
-                const fileExtension = file.name.split('.').pop();
-                const uniqueFileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
+                // A. Process Mod File Upload
+                const modExtension = file.name.split('.').pop();
+                const uniqueModName = `files/${Date.now()}_${Math.random().toString(36).substring(7)}.${modExtension}`;
 
-                // A. Save to public bucket
-                const { data: storageData, error: storageError } = await supabase.storage
+                const { data: storageData, error: storageError } = await supabaseClient.storage
                     .from('mods')
-                    .upload(uniqueFileName, file);
+                    .upload(uniqueModName, file);
 
                 if (storageError) throw storageError;
 
-                // B. Generate secure direct download pointer
-                const { data: { publicUrl } } = supabase.storage
+                const { data: { publicUrl: filePublicUrl } } = supabaseClient.storage
                     .from('mods')
-                    .getPublicUrl(uniqueFileName);
+                    .getPublicUrl(uniqueModName);
 
-                // C. Log records into index table
-                const { error: dbError } = await supabase
+                // B. Process Optional Screenshot Upload
+                let imagePublicUrl = null;
+                if (imageFile) {
+                    const imgExtension = imageFile.name.split('.').pop();
+                    const uniqueImgName = `previews/${Date.now()}_${Math.random().toString(36).substring(7)}.${imgExtension}`;
+
+                    const { error: imgStorageError } = await supabaseClient.storage
+                        .from('mods')
+                        .upload(uniqueImgName, imageFile);
+
+                    if (imgStorageError) throw imgStorageError;
+
+                    const { data: { publicUrl } } = supabaseClient.storage
+                        .from('mods')
+                        .getPublicUrl(uniqueImgName);
+                    
+                    imagePublicUrl = publicUrl;
+                }
+
+                // C. Log records into index table (including new image field)
+                const { error: dbError } = await supabaseClient
                     .from('mod_list')
                     .insert([
-                        { name: modName, download_url: publicUrl }
+                        { 
+                            name: modName, 
+                            download_url: filePublicUrl,
+                            image_url: imagePublicUrl 
+                        }
                     ]);
 
                 if (dbError) throw dbError;
