@@ -481,13 +481,13 @@
             <h2 class="block-title">Plan Intel</h2>
             <form id="uploadForm">
                 <label for="authorName">Author</label>
-                <input type="text" id="authorName" placeholder="e.g., Ding_Chavez" required>
+                <input type="text" id="authorName" placeholder="e.g., Ding_Chavez" maxlength="35" required>
 
                 <label for="modName">Plan Name</label>
-                <input type="text" id="modName" placeholder="e.g., Operation_Iron_Shield" required>
+                <input type="text" id="modName" placeholder="e.g., Operation_Iron_Shield" maxlength="40" required>
 
                 <label for="mapName">Target Location (Map)</label>
-                <input type="text" id="mapName" placeholder="e.g., Penthouse, Import/Export, Island Estate" required>
+                <input type="text" id="mapName" placeholder="e.g., Penthouse, Import/Export" maxlength="25" required>
 
                 <label for="gameMode">GameMode</label>
                 <select id="gameMode" required>
@@ -503,15 +503,15 @@
                     <option value="Stealth Wolf">Stealth Wolf</option>
                 </select>
 
-                <label for="modDescription">Plan Description (Optional)</label>
-                <textarea id="modDescription" placeholder="Provide strategic layout execution details, path specifics, rules of engagement..." rows="3" style="resize: vertical;" maxlength="350"></textarea>
-                <div id="charCounter" style="font-size: 11px; color: var(--text-muted); text-align: right; margin-top: -10px; margin-bottom: 5px;">0 / 350</div>
-                
                 <label for="modFile">Select Plan File (.pln)</label>
                 <input type="file" id="modFile" accept=".pln" required>
 
                 <label for="modImage">Screenshot Preview (Optional)</label>
                 <input type="file" id="modImage" accept="image/*">
+
+                <label for="modDescription">Plan Description (Optional)</label>
+                <textarea id="modDescription" placeholder="Provide strategic layout execution details, path specifics, rules of engagement..." rows="3" style="resize: vertical;" maxlength="350"></textarea>
+                <div id="charCounter" style="font-size: 11px; color: var(--text-muted); text-align: right; margin-top: -10px; margin-bottom: 5px;">0 / 350</div>
                 
                 <button type="submit" id="submitBtn" class="btn-action">Publish</button>
                 <div id="uploadStatus" class="status-msg-line"></div>
