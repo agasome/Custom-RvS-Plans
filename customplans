@@ -1,1 +1,16 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Mod Workshop</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #121212; color: white; }
+        h1 { color: #0070f3; }
+    </style>
+</head>
+<body>
+    <h1>Welcome to the Mod Workshop</h1>
+    <p>The future home of 2KB mod sharing. Connection successful!</p>
+</body>
+</html>
