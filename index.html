@@ -504,7 +504,8 @@
                 </select>
 
                 <label for="modDescription">Plan Description (Optional)</label>
-                <textarea id="modDescription" placeholder="Provide strategic layout execution details, path specifics, rules of engagement..." rows="3" style="resize: vertical;"></textarea>
+                <textarea id="modDescription" placeholder="Provide strategic layout execution details, path specifics, rules of engagement..." rows="3" style="resize: vertical;" maxlength="350"></textarea>
+                <div id="charCounter" style="font-size: 11px; color: var(--text-muted); text-align: right; margin-top: -10px; margin-bottom: 5px;">0 / 350</div>
                 
                 <label for="modFile">Select Plan File (.pln)</label>
                 <input type="file" id="modFile" accept=".pln" required>
@@ -546,10 +547,17 @@
         const submitBtn = document.getElementById('submitBtn');
         const searchBar = document.getElementById('searchBar');
         const uploadStatus = document.getElementById('uploadStatus');
+        const descInput = document.getElementById('modDescription');
+        const charCounter = document.getElementById('charCounter');
 
         let allCachedMods = [];
         let currentFilterMode = 'all';
         let planIdToDelete = null; 
+
+        // Live Description character limit tracker
+        descInput.addEventListener('input', () => {
+            charCounter.innerText = `${descInput.value.length} / 350`;
+        });
 
         function compressScreenshot(file, maxWidth = 1024, quality = 0.75) {
             return new Promise((resolve, reject) => {
@@ -774,7 +782,6 @@
             const authorInput = document.getElementById('authorName');
             const mapInput = document.getElementById('mapName');
             const modeInput = document.getElementById('gameMode');
-            const descInput = document.getElementById('modDescription');
             
             const file = fileInput.files[0];
             const imageFile = imageInput.files[0];
@@ -792,7 +799,6 @@
             uploadStatus.innerHTML = '';
 
             try {
-                // Flat naming convention used to dodge nested folder restriction rules
                 const uniqueModName = `plan_${Date.now()}_${Math.random().toString(36).substring(7)}.pln`;
 
                 const { data: storageData, error: storageError } = await supabaseClient.storage
@@ -856,9 +862,18 @@
 
                 uploadStatus.innerHTML = '<span style="color: #4caf50;">Upload successful!</span>';
                 
-                uploadForm.reset(); 
-                fetchMods();        
+                // MANUAL RESET MUX PIPELINE: Keeps browser folder history sticky and intact!
+                nameInput.value = '';
+                mapInput.value = '';
+                modeInput.selectedIndex = 0;
+                descInput.value = '';
+                charCounter.innerText = '0 / 350';
                 
+                // Clearing inputs via value property retains file browser cache handles cleanly!
+                fileInput.value = '';
+                imageInput.value = '';
+                
+                fetchMods();        
                 setTimeout(() => { uploadStatus.innerHTML = ''; }, 5000);
                 
             } catch (error) {
