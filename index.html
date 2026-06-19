@@ -46,8 +46,9 @@
             color: var(--accent-red);
         }
 
+        /* Widened container to support 3 cards per row comfortably */
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 30px auto;
             padding: 0 20px;
             display: grid;
@@ -178,9 +179,10 @@
             letter-spacing: 0.5px;
         }
 
+        /* Adjusted item grid width thresholds to perfectly accommodate 3 entries per row */
         .items-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 20px;
         }
 
@@ -460,7 +462,7 @@
         <div>
             <div class="workshop-block">
                 <div class="block-header-flex">
-                    <h2 class="block-title">Browse Plans:</h2>
+                    <h2 class="block-title">Browse <strong>Plans:</strong></h2>
                     <div class="workshop-tabs">
                         <button class="tab-btn active" id="tabAll" onclick="switchTab('all')">All Plans</button>
                         <button class="tab-btn" id="tabMine" onclick="switchTab('mine')">My Uploads</button>
