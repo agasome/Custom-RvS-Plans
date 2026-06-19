@@ -530,9 +530,9 @@
     <div id="deleteModal" class="confirm-overlay">
         <div class="confirm-box">
             <h3>Confirm Operational Purge</h3>
-            <p>Are you certain you wish to purge this plan from the directory?</p>
+            <p>Are you certain you wish to delete this plan from the directory?</p>
             <div class="confirm-buttons-row">
-                <button id="confirmDeleteBtn" class="btn-confirm-yes">Purge Plan</button>
+                <button id="confirmDeleteBtn" class="btn-confirm-yes">Delete Plan</button>
                 <button onclick="closeDeleteModal()" class="btn-confirm-no">Cancel</button>
             </div>
         </div>
@@ -668,7 +668,7 @@
                     <div class="item-body">
                         <span class="item-title">${mod.name}</span>
                         <span class="item-meta">By <strong>${authorString}</strong></span>
-                        <span class="item-meta" style="font-size: 11px; margin-top: -3px;">Intel Filed: ${uploadDate}</span>
+                        <span class="item-meta" style="font-size: 11px; margin-top: -3px;">Uploaded: ${uploadDate}</span>
                         ${descriptionHtml}
                         <div class="tag-group">
                             <span class="tag-pill">${folderMap}</span>
