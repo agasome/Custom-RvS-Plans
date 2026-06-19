@@ -568,33 +568,54 @@
                 reader.onload = (event) => {
                     const img = new Image();
                     img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
+                    img.onload = async () => {
                         let width = img.width;
                         let height = img.height;
 
+                        // Initial downscale if image dimensions exceed maximum desktop width
                         if (width > maxWidth) {
                             height = Math.round((height * maxWidth) / width);
                             width = maxWidth;
                         }
 
-                        canvas.width = width;
-                        canvas.height = height;
-
+                        const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        let currentQuality = quality;
+                        let compressedBlob = null;
+                        let fileSizeInBytes = Infinity;
+                        const ONE_MB = 1024 * 1024;
 
-                        canvas.toBlob((blob) => {
-                            if (blob) {
-                                const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
-                                    type: 'image/jpeg',
-                                    lastModified: Date.now()
-                                });
-                                resolve(compressedFile);
-                            } else {
+                        // Iterative loop runs until the JPEG blob size drops safely below 1MB
+                        while (fileSizeInBytes >= ONE_MB && currentQuality > 0.1) {
+                            canvas.width = width;
+                            canvas.height = height;
+                            ctx.clearRect(0, 0, width, height);
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            compressedBlob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', currentQuality));
+                            
+                            if (!compressedBlob) {
                                 reject(new Error('Canvas compression output fault.'));
+                                return;
                             }
-                        }, 'image/jpeg', quality);
+
+                            fileSizeInBytes = compressedBlob.size;
+
+                            // Scale down both dimensions and encoder quality properties if over 1MB
+                            if (fileSizeInBytes >= ONE_MB) {
+                                currentQuality -= 0.12; 
+                                width = Math.round(width * 0.85); 
+                                height = Math.round(height * 0.85); 
+                            }
+                        }
+
+                        const compressedFile = new File([compressedBlob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        
+                        resolve(compressedFile);
                     };
                     img.onerror = (err) => reject(err);
                 };
